@@ -2,16 +2,18 @@ import numpy as np
 import cv2 as cv
 from utils import coordinate
 
+# V LOW False Positives
+
 def detect_block(f) -> coordinate:
     """f: undisorted, cropped frame
     returns coordinate of the block or None"""
     f = f[535:675, 200:335] # Tight region of interest
     f_hsv=cv.cvtColor(f, cv.COLOR_BGR2HSV)
-    lower_red = np.array([0,50,50]) # Lower scale mask (0-10)
-    upper_red = np.array([20,255,255]) 
+    lower_red = np.array([0, 50, 50]) # Lower scale mask (0-10)
+    upper_red = np.array([20, 255, 255]) 
     mask0 = cv.inRange(f_hsv, lower_red, upper_red)
-    lower_red = np.array([170,50,50]) # Upper scale mask (170-180)
-    upper_red = np.array([180,255,255])
+    lower_red = np.array([170, 50, 50]) # Upper scale mask (170-180)
+    upper_red = np.array([180, 255, 255])
     mask1 = cv.inRange(f_hsv, lower_red, upper_red)
     mask = mask0 + mask1 # Join masks
     # Set img to zero everywhere except the mask
@@ -92,12 +94,12 @@ def detect_dropoff(f) -> list:
     gray_r = cv.cvtColor(reds, cv.COLOR_BGR2GRAY)
     blur_b = cv.medianBlur(gray_b, 5)
     blur_r = cv.medianBlur(gray_r, 5)
-    sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+    sharpen_kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
     sharpen_b = cv.filter2D(blur_b, -1, sharpen_kernel)
     sharpen_r = cv.filter2D(blur_r, -1, sharpen_kernel)
     
-    thresh_b = cv.threshold(sharpen_b,threshold,255, cv.THRESH_BINARY_INV)[1]
-    thresh_r = cv.threshold(sharpen_r,threshold,255, cv.THRESH_BINARY_INV)[1]
+    thresh_b = cv.threshold(sharpen_b,threshold, 255, cv.THRESH_BINARY_INV)[1]
+    thresh_r = cv.threshold(sharpen_r,threshold, 255, cv.THRESH_BINARY_INV)[1]
     thresh_b = cv.bitwise_not(thresh_b)
     thresh_r = cv.bitwise_not(thresh_r)
 

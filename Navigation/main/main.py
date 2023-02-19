@@ -70,17 +70,17 @@ while (navigator.arena.blocks) < blocks_to_attempt: # loop for each delivery
             navigator.update_arena(stream=stream) 
             navigator.reapproach_path()
             navigator.navigate_path(stream=stream, detector=detector, 
-                                    client=client, topic='IDP211') 
+                                    client=client) 
 
     print("{} block picked up! Delivery coming up.".format(block_colour))
 
     navigator.delivery_path(colour=block_colour) 
     navigator.navigate_path(stream=stream, detector=detector, 
-                            client=client, topic='IDP211') 
+                            client=client) 
     print('Block done!')
 
 # Return home!
 navigator.return_path()
 navigator.navigate_path(stream=stream, detector=detector, 
-                        client=client, topic='IDP211') 
+                        client=client) 
 print('Competition done!')

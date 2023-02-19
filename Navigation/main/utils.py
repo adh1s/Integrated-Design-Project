@@ -77,7 +77,7 @@ class Navigation():
         self.arena = arena
         self.camera = camera
         self.current_path = deque([]) # Current path to follow 
-        self.mode = None # Pick-up, Delivery or Finish
+        self.mode = None # Pick-up, Delivery or Finish - Useful for debugging
 
     def forward_path(self):
         """
@@ -126,10 +126,8 @@ class Navigation():
         self.arena.scan_block(stream)
     
     def navigate_path(self, stream, detector, client, topic='IDP211'):
-        frame_counter = 0 
         while self.current_path:
             _, f = stream.read()
-            frame_counter += 1
 
             destination = self.current_path[0]
             f = self.camera.undistort(f) 
@@ -139,7 +137,7 @@ class Navigation():
 
             for detection in results: 
                 translation_information = Navigation.calculate_required_translation(detection, 
-                                                                              destination)
+                                                                                    destination)
                 translation_distance = translation_information['translation_distance']
                 angle = Navigation.calculate_angle(translation_information["robot_vector"],
                                                    translation_information["path_vector"])
@@ -163,26 +161,26 @@ class Navigation():
         returns {'translation distance': x m, 'path_vector': vector, 'robot_vector': vector} """
 
         ptA, ptB, _, _ = aruco_tag_detection.corners
-        ptB = coordinate(int(ptB[0]), int(ptB[1]))
         ptA = coordinate(int(ptA[0]), int(ptA[1]))
+        ptB = coordinate(int(ptB[0]), int(ptB[1]))
 
         center = coordinate(int(aruco_tag_detection.center[0]), 
                             int(aruco_tag_detection.center[1]))
         
         # Unit vector in the direction the robot is facing 
-        x_comp = ((ptB[0] + ptA[0])/ 2) - center.x
-        y_comp = center.y - ((ptB[1] + ptA[1])/2)
-        robot_vector = Navigation.normalise(x_comp, y_comp)
+        x_comp = ((ptB.x + ptA.x)/ 2) - center.x
+        y_comp = center.y - ((ptB.y + ptA.y)/2)
+        robot_vector = Navigation.normalise(vector(x_comp, y_comp))
 
         # Unit vector in the direction of required translation 
-        translation_x = destination[0] - center.x
-        translation_y = center.y - destination[1]
+        translation_x = destination.x - center.x
+        translation_y = center.y - destination.y
         translation_pixel_distance = (translation_x**2 + translation_y**2)**(1/2)
-        path_vector = Navigation.normalise(translation_x, translation_y)
+        path_vector = Navigation.normalise(vector(translation_x, translation_y))
 
         # Basic pixel to distance calibration
-        front_edge = vector(ptB[0] - ptA[0], ptB[1] - ptA[1])
-        front_edge_pixel_distance = (front_edge.x_component**2 + front_edge.y_component**2)**(1/2)
+        front_edge = vector(ptB.x - ptA.x, ptB.y - ptA.y)
+        front_edge_pixel_distance = ((front_edge.x_component)**2 + (front_edge.y_component)**2)**(1/2)
         front_edge_length = 0.093 # in m, known distance for calibration reference
         translation_distance = ((translation_pixel_distance / front_edge_pixel_distance) * front_edge_length) 
 
@@ -194,7 +192,7 @@ class Navigation():
     def calculate_angle (rvec: vector, pvec: vector) -> float:
         """rvec: unit vector in the direction the robot is facing
            pvec: unit vector in the direction of required translation
-        returns angle (positive - left turn, negative - right turn """
+        returns angle (positive - left turn, negative - right turn) """
         
         dot = rvec.x*pvec.x + rvec.y*pvec.y   # dot product between [rx, ry] and [px, py]
         det = rvec.x*pvec.y - rvec.y*pvec.x   # determinant
@@ -202,19 +200,19 @@ class Navigation():
         return ((180/math.pi)*radians)
     
     @staticmethod
-    def intermediates(p1: tuple, p2: tuple, nb_points: int = 1) -> list:
-        """p1: first coordinate
-           p2: second coordinate
+    def intermediates(p1: coordinate, p2: coordinate, nb_points: int = 1) -> list:
+        """p1: start coordinate
+           p2: end coordinate
            returns nb_points equally spaced points interpolated with p1 and p2 """
 
-        x_spacing = (p2[0] - p1[0]) / (nb_points + 1)
-        y_spacing = (p2[1] - p1[1]) / (nb_points + 1)
+        x_spacing = (p2.x - p1.x) / (nb_points + 1)
+        y_spacing = (p2.y - p1.y) / (nb_points + 1)
 
-        return [(int(p1[0] + i * x_spacing), int(p1[1] +  i * y_spacing))
+        return [coordinate(int(p1.x + i * x_spacing), int(p1.y +  i * y_spacing))
                 for i in range(1, nb_points+1)]
     
     @staticmethod
-    def normalise(vec: vector):
+    def normalise(vec: vector) -> vector:
         """vec: vector 
         return unit vector in the same direction as vec """
         magnitude = (vec.x_component**2 + vec.y_component**2)**(1/2)
