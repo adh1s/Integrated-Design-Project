@@ -2,9 +2,8 @@ import numpy as np
 import cv2 as cv
 from os import listdir
 from os.path import isfile, join
-# Set path to dataset
-path = 'distortion/imgs'
 
+path = 'distortion/imgs'
 images = [join(path, f) for f in listdir(path) if isfile(join(path, f))]
 
 CHECKERBOARD = (6, 9)
