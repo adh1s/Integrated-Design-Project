@@ -4,7 +4,7 @@ from utils import coordinate
 
 def detect_block(f) -> coordinate:
     """f: undisorted, cropped frame
-       returns (x, y) or None of the block"""
+    returns coordinate of the block or None"""
     f = f[535:675, 200:335] # Tight region of interest
     f_hsv=cv.cvtColor(f, cv.COLOR_BGR2HSV)
     lower_red = np.array([0,50,50]) # Lower scale mask (0-10)
@@ -43,10 +43,9 @@ def detect_block(f) -> coordinate:
 
 def detect_intersections(f) -> list:
     """f: undistorted, cropped frame
-       returns [(x1, y1), (x2, y2)] - the coordinates of first and second 
-       if found; or None"""
-    check1 = cv.imread('/Users/adhi/Desktop/IDP/main/features/checkpoint1.png',0)
-    check2 = cv.imread('/Users/adhi/Desktop/IDP/main/features/checkpoint2.png',0) 
+    returns coordinates of intersections or None"""
+    check1 = cv.imread('/Users/adhi/Documents/Integrated_Design_Project/main/features/checkpoint1.png',0)
+    check2 = cv.imread('/Users/adhi/Documents/Integrated_Design_Project/main/features/checkpoint2.png',0) 
     sift = cv.SIFT_create()
     # find the keypoints and descriptors with SIFT
     _, des1 = sift.detectAndCompute(check1,None)
@@ -82,8 +81,7 @@ def detect_intersections(f) -> list:
 
 def detect_dropoff(f) -> list:
     """f: undisorted, cropped frame
-       returns [(x, y), (x,y) ...] of the drop-off locations - [Blue, Blue, Red, Red]
-       if found; or None"""
+    returns coordinates of drop-off locations - [Blue, Blue, Red, Red] - or None"""
     threshold = 230 
 
     f = f[:, 200:800]
@@ -135,7 +133,6 @@ def detect_dropoff(f) -> list:
     
     if len(centers) == 4:
         centers.sort(key=lambda y: y[0])
-        # Blue, Blue, Red, Red
         return [coordinate(centers[0][0], centers[0][1]),
                 coordinate(centers[1][0], centers[1][1]),
                 coordinate(centers[3][0], centers[3][1]),

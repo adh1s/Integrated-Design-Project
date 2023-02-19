@@ -39,7 +39,7 @@ class Arena():
 
     def scan(self, stream, max_frames=100):
         frame_counter = 0
-        while len(frame_counter) < max_frames:
+        while frame_counter < max_frames:
             _, f = stream.read()
             frame_counter += 1
             f = self.camera.undistort(f) 
@@ -58,7 +58,7 @@ class Arena():
 
     def scan_block(self, stream, max_frames=100):
         frame_counter = 0
-        while len(frame_counter) < max_frames:
+        while frame_counter < max_frames:
             _, f = stream.read()
             frame_counter += 1
             f = self.camera.undistort(f) 
@@ -70,6 +70,10 @@ class Arena():
 
 class Navigation():
     def __init__(self, arena, camera):
+        """
+        Class for all things navigation;
+        Synthesises paths and follows them (includes helper static methods for navigation)
+        """
         self.arena = arena
         self.camera = camera
         self.current_path = deque([]) # Current path to follow 
@@ -123,7 +127,7 @@ class Navigation():
     
     def navigate_path(self, stream, detector, client, topic='IDP211'):
         frame_counter = 0 
-        while len(self.current_path) > 0:
+        while self.current_path:
             _, f = stream.read()
             frame_counter += 1
 
@@ -143,10 +147,10 @@ class Navigation():
                 # Negative distance for last destination (triggers a slow approach mode)
                 if len(self.current_path) == 1:
                     information = str(int(angle)) + ";" + str(round(( - translation_distance), 2)) 
-                    client.publish("IDP211", information)
+                    client.publish(topic, information)
                 else:
                     information = str(int(angle)) + ";" + str(round(translation_distance, 2)) 
-                    client.publish("IDP211", information)
+                    client.publish(topic, information)
                 
                 # Delete the checkpoint when below a certain threshold - 'reached'
                 if translation_distance <= 0.10:
@@ -154,10 +158,10 @@ class Navigation():
 
     @staticmethod
     def calculate_required_translation(aruco_tag_detection, destination: coordinate) -> dict:
-        """apriltag_tag_detection: each result from the detector in a frame - data struct in https://pypi.org/project/apriltag/
+        """aruco_tag_detection: each result from the detector (data structure in https://pypi.org/project/apriltag/)
            destination: coordinates of the next destination in the trip
-        returns {'translation distance': x m, 'path_vector': vector, 'robot_vector': vector}
-        """
+        returns {'translation distance': x m, 'path_vector': vector, 'robot_vector': vector} """
+
         ptA, ptB, _, _ = aruco_tag_detection.corners
         ptB = coordinate(int(ptB[0]), int(ptB[1]))
         ptA = coordinate(int(ptA[0]), int(ptA[1]))
@@ -190,7 +194,7 @@ class Navigation():
     def calculate_angle (rvec: vector, pvec: vector) -> float:
         """rvec: unit vector in the direction the robot is facing
            pvec: unit vector in the direction of required translation
-        returns angle (positive - left turn, negative - right turn"""
+        returns angle (positive - left turn, negative - right turn """
         
         dot = rvec.x*pvec.x + rvec.y*pvec.y   # dot product between [rx, ry] and [px, py]
         det = rvec.x*pvec.y - rvec.y*pvec.x   # determinant
@@ -201,7 +205,7 @@ class Navigation():
     def intermediates(p1: tuple, p2: tuple, nb_points: int = 1) -> list:
         """p1: first coordinate
            p2: second coordinate
-           returns nb_points equally spaced points interpolated with p1 and p2"""
+           returns nb_points equally spaced points interpolated with p1 and p2 """
 
         x_spacing = (p2[0] - p1[0]) / (nb_points + 1)
         y_spacing = (p2[1] - p1[1]) / (nb_points + 1)
@@ -212,7 +216,6 @@ class Navigation():
     @staticmethod
     def normalise(vec: vector):
         """vec: vector 
-        return unit vector in the same direction as vec
-        """
+        return unit vector in the same direction as vec """
         magnitude = (vec.x_component**2 + vec.y_component**2)**(1/2)
         return vector(vec.x_component/magnitude, vec.y_component/magnitude)
